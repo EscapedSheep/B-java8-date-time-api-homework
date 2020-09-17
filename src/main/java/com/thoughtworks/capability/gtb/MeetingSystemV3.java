@@ -1,6 +1,6 @@
 package com.thoughtworks.capability.gtb;
 
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -17,6 +17,10 @@ import java.time.format.DateTimeFormatter;
  */
 public class MeetingSystemV3 {
 
+  private static final String London_ZoneId = "Europe/London";
+
+  private static final String Chicago_ZoneId = "America/Chicago";
+
   public static void main(String[] args) {
     String timeStr = "2020-04-01 14:30:00";
 
@@ -25,11 +29,15 @@ public class MeetingSystemV3 {
     // 从字符串解析得到会议时间
     LocalDateTime meetingTime = LocalDateTime.parse(timeStr, formatter);
 
-    LocalDateTime now = LocalDateTime.now();
-    if (now.isAfter(meetingTime)) {
+    LocalDateTime now = LocalDateTime.now(ZoneId.of(London_ZoneId));
+    if (isMeetingDayExpired(meetingTime, now)) {
       LocalDateTime tomorrow = now.plusDays(1);
       int newDayOfYear = tomorrow.getDayOfYear();
       meetingTime = meetingTime.withDayOfYear(newDayOfYear);
+
+      ZonedDateTime londonZoneTime = ZonedDateTime.of(meetingTime, ZoneId.of(London_ZoneId));
+      ZonedDateTime chicagoZoneTime = londonZoneTime.withZoneSameInstant(ZoneId.of(Chicago_ZoneId));
+      meetingTime = chicagoZoneTime.toLocalDateTime();
 
       // 格式化新会议时间
       String showTimeStr = formatter.format(meetingTime);
@@ -37,5 +45,9 @@ public class MeetingSystemV3 {
     } else {
       System.out.println("会议还没开始呢");
     }
+  }
+
+  public static boolean isMeetingDayExpired(LocalDateTime meetingTime, LocalDateTime now) {
+    return Period.between(now.toLocalDate(), meetingTime.toLocalDate()).isNegative();
   }
 }
